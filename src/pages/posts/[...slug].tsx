@@ -46,7 +46,7 @@ export default function PostPage({
   );
 }
 export async function getStaticPaths() {
-  const dirs: [string[]] = [[]];
+  let dirs: string[][] = [];
   const files = fs.readdirSync("_posts", { recursive: true });
   files.forEach((file) => {
     if (typeof file === "string" && file.endsWith(".mdx")) {
@@ -58,6 +58,7 @@ export async function getStaticPaths() {
       slug: dir,
     },
   }));
+  console.log(paths);
   return {
     paths,
     fallback: true,
