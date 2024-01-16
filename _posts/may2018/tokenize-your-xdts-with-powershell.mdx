@@ -1,0 +1,88 @@
+# Tokenize your XDTs with Powershell
+
+XDTs have gotten a bad rep over the years for being difficult to use and hard to understand. However despite that, they're still the most reliable and consistent way to transform configurations. I've come up with a way to tokenize those XDTs to make them able to be used in a more flexible way.
+
+For example say we have different cookie domains per environment that we want to patch in and out.
+
+note: This code requires the dll Microsoft.Web.XmlTransform.dll to be in the same folder as the powershell script
+
+```ps1
+param(
+  [string]$Path,
+  [string[]]$XDTs,
+  [hashtable]$Tokens
+)
+
+function Update-XmlDocTransform($xml, $xdt, $tokens)
+{
+    Add-Type -LiteralPath "$PSScriptRoot\Microsoft.Web.XmlTransform.dll"
+
+    $xmldoc = New-Object Microsoft.Web.XmlTransform.XmlTransformableDocument;
+    $xmldoc.PreserveWhitespace = $true
+    $xmldoc.LoadXml($xml);
+    $useTokens = $false
+    if ($tokens -ne $null -and $tokens.Count -gt 0){
+        $useTokens = $true
+        $sb = [System.Text.StringBuilder]::new((Get-Content -Path $xdt))
+        $tmpPath = "$($env:TEMP)\$([guid]::NewGuid()).xdt"
+        $tokens.Keys | ForEach-Object{
+            $null = $sb.Replace($_, $tokens[$_])
+        }
+        Set-Content -Path $tmpPath -Value $sb.ToString()
+        $xdt = $tmpPath
+    }
+
+    $transf = New-Object Microsoft.Web.XmlTransform.XmlTransformation($xdt);
+    if ($transf.Apply($xmldoc) -eq $false)
+    {
+        throw "Transformation failed."
+    }
+    if ($useTokens){
+        Remove-Item -Path $xdt -Force
+    }
+    return $xmldoc.OuterXml
+
+}
+
+$contents = Get-Content $Path | Out-String
+$XDTs | Foreach-Object{
+$contents = Update-XmlDocTransform -xml $contents -xdt $\_ -tokens $Tokens
+}
+Set-Content $path -Value $contents
+```
+
+Here is an example usage:
+
+```ps1
+LocalXmlTransform.ps1 -Path "C:\inetpub\wwwroot\sc901.local" -XDTs "C:\xdt\AddBindingRedirects.xdt","C:\xdt\AddSessionCookie" -Tokens @{_ShareSessionCookie_="mysite.local";_RedirectName_="mydependency"}
+```
+
+In this example we're running two XDT files against the web.config and replacing a couple of tokens in the XDT.
+
+Here is an example of an XDT with tokens to ensure a connection string exists:
+
+```html
+<?xml version="1.0" encoding="utf-8"?>
+<connectionStrings
+  xmlns:xdt="http://schemas.microsoft.com/XML-Document-Transform"
+  xmlns:asmv1="urn:schemas-microsoft-com:asm.v1"
+>
+  <add name="_name_" xdt:Transform="Remove" xdt:Locator="Match(name)" />
+  <add
+    name="_name_"
+    xdt:Transform="InsertIfMissing"
+    xdt:Locator="Match(name)"
+    connectionString="Encrypt=True;TrustServerCertificate=False;Data
+    Source=_fqdn_;Initial Catalog=_databasename_;User
+    Id=_username_;Password=_password_;"
+  />
+</connectionStrings>
+```
+
+To use this XDT your parameters would look something like this:
+
+```ps1
+LocalXmlTransform.ps1 -Path "C:\inetpub\wwwroot\App*Config\ConnectionStrings.config" -XDTs "C:\xdt\EnsureConnectionString.xdt" -Tokens @{\_name*="mySpecialDatabase";_fqdn_="myazurestuff.database.windows.net,1433";_databasename_="specialdatabase";_username_="secretuser";_password_="secretpassword"}
+```
+
+Hopefully this will help your devops process
