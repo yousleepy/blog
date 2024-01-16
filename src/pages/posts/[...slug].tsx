@@ -50,7 +50,7 @@ export async function getStaticPaths() {
   const files = fs.readdirSync("_posts", { recursive: true });
   files.forEach((file) => {
     if (typeof file === "string" && file.endsWith(".mdx")) {
-      dirs.push(["posts", ...file.replace(".mdx", "").split(`\\`)]);
+      dirs.push(file.replace(".mdx", "").split(`\\`));
     }
   });
   const paths = dirs.map((dir) => ({
@@ -58,7 +58,7 @@ export async function getStaticPaths() {
       slug: dir,
     },
   }));
-  console.log(paths);
+  console.log(JSON.stringify(paths, null, " "));
   return {
     paths,
     fallback: true,
