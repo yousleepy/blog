@@ -71,7 +71,10 @@ export async function getStaticProps(
   }>
 ) {
   const { slug } = ctx.params!;
+  console.log(1);
+  console.log(`_posts/${slug.join("/")}.mdx`);
   if (await fs.existsSync(`_posts/${slug.join("/")}.mdx`)) {
+    console.log(2);
     console.log(`_posts/${slug.join("/")}.mdx`);
     // retrieve the MDX blog post file associated
     // with the specified slug parameter
@@ -113,6 +116,7 @@ export async function getStaticProps(
       revalidate: 60,
     };
   }
+  console.log(3);
   console.log("nooooooooooooooooooope");
   return { props: {} };
 }
