@@ -5,7 +5,7 @@ import { MDXRemote } from "next-mdx-remote";
 import Head from "next/head";
 import React from "react";
 import "./../../app/globals.css";
-import { JeffHeader } from "@/components/header";
+import JeffHeader from "@/components/header";
 import rehypeHighlight from "rehype-highlight";
 import { common } from "lowlight";
 import powershell from "highlight.js/lib/languages/powershell";

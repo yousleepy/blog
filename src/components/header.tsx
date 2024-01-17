@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-export const JeffHeader = () => {
+export default function JeffHeader() {
   return (
     <div className="h-44">
       <div className="columns-3 p-5 text-stone-800 bg-gradient-to-r from-white via-white to-blue-900 border-b-blue-800">
@@ -20,4 +20,4 @@ export const JeffHeader = () => {
       </div>
     </div>
   );
-};
+}

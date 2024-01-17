@@ -1,5 +1,5 @@
 import fs from "fs";
-import { JeffHeader } from "@/components/header";
+import JeffHeader from "@/components/header";
 import "./globals.css";
 import { JeffNav } from "@/components/nav";
 export default function Home() {
@@ -15,7 +15,6 @@ export default function Home() {
   });
   return (
     <div>
-      <JeffHeader />
       <JeffNav nav={dirs} />
     </div>
   );
