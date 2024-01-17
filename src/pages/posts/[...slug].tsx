@@ -47,7 +47,7 @@ export default function PostPage({
 }
 export async function getStaticPaths() {
   let dirs: string[][] = [];
-  const files = fs.readdirSync("_posts", { recursive: true });
+  const files = fs.readdirSync("public/_posts", { recursive: true });
   files.forEach((file) => {
     if (typeof file === "string" && file.endsWith(".mdx")) {
       dirs.push(file.replace(".mdx", "").split(/[\\/]/g));
@@ -72,16 +72,16 @@ export async function getStaticProps(
 ) {
   const { slug } = ctx.params!;
   console.log(1);
-  console.log(`_posts/${slug.join("/")}.mdx`);
-  if (await fs.existsSync(`_posts/${slug.join("/")}.mdx`)) {
+  console.log(`public/_posts/${slug.join("/")}.mdx`);
+  if (await fs.existsSync(`public/_posts/${slug.join("/")}.mdx`)) {
     console.log(2);
-    console.log(`_posts/${slug.join("/")}.mdx`);
+    console.log(`public/_posts/${slug.join("/")}.mdx`);
     // retrieve the MDX blog post file associated
     // with the specified slug parameter
-    const postFile = fs.readFileSync(`_posts/${slug.join("/")}.mdx`);
+    const postFile = fs.readFileSync(`public/_posts/${slug.join("/")}.mdx`);
     const dirs: [string[]] = [[]];
 
-    const files = fs.readdirSync("_posts", {
+    const files = fs.readdirSync("public/_posts", {
       recursive: true,
     });
     files.forEach((file) => {

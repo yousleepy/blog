@@ -5,12 +5,12 @@ import { JeffNav } from "@/components/nav";
 export default function Home() {
   const dirs: [string[]] = [[]];
 
-  const files = fs.readdirSync("_posts", {
+  const files = fs.readdirSync("public/_posts", {
     recursive: true,
   });
   files.forEach((file) => {
     if (typeof file === "string" && file.endsWith(".mdx")) {
-      dirs.push(["posts", ...file.replace(".mdx", "").split(`\\`)]);
+      dirs.push(["posts", ...file.replace(".mdx", "").split(/[\\/]/g)]);
     }
   });
   return (
