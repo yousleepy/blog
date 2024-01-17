@@ -50,7 +50,7 @@ export async function getStaticPaths() {
   const files = fs.readdirSync("_posts", { recursive: true });
   files.forEach((file) => {
     if (typeof file === "string" && file.endsWith(".mdx")) {
-      dirs.push(file.replace(".mdx", "").split(`\\`));
+      dirs.push(file.replace(".mdx", "").split(/[\\/]/g));
     }
   });
   const paths = dirs.map((dir) => ({
@@ -82,7 +82,7 @@ export async function getStaticProps(
     });
     files.forEach((file) => {
       if (typeof file === "string" && file.endsWith(".mdx")) {
-        dirs.push(file.replace(".mdx", "").split(`\\`));
+        dirs.push(file.replace(".mdx", "").split(/[\\/]/g));
       }
     });
 
