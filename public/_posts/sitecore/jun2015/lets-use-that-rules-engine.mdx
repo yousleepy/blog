@@ -1,0 +1,222 @@
+# Lets use that rules engine!
+
+The most underutilized part of Sitecore, in my mind, is the Rules Engine.  Being able to piece together boolean business logic blocks is great for reducing technical debt by decoupling your business logic from the code.
+
+## The Basics
+
+The assumption I am making here is that you are already familiar with setting up rules using the rules engine for personalization.  So I'll just quickly brush over how to create a custom rule in Sitecore.  For this demonstration, I'll be creating a rule for identifying if the user is experiencing a specific error code.
+
+### Step 1
+
+1. Create a tag named "Errors" to identify our new group of rules and actions.
+/sitecore/system/Settings/Rules/Definitions/Tags
+![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulestags.png)
+
+### Step 2
+
+2.  Create a new rule element named "Errors" under the Elements node.
+/sitecore/system/Settings/Rules/Definitions/Elements
+![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/errorelement.png)
+
+### Step 3
+
+3.  Associate the tag we created in Step 1 with the rule element we made in Step 2 by setting the default tag on the rule element.
+    /sitecore/system/Settings/Rules/Definitions/Elements/errors/Tags/Default
+    ![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulecontexttags.png)
+
+### Step 4
+
+4.Create our rules and actions.  For this demo, I'll be setting up one of each (as seen in the image above).  There's an excellent blog post describing how to set up the text for your rule so that it automatically populates properties in your rule class here: Creating Custom Conditions.  Don't forget to add in the type of your condition or action.
+![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulecondition.png)
+
+### Step 5
+
+5.  Build the code for the condition and action.
+
+The action:
+
+```csharp
+	[UsedImplicitly]
+	public class Redirect<T> : RuleAction<T>
+		where T : RuleContext
+	{
+		public string Page { get; set; }
+
+		public override void Apply(T ruleContext)
+		{
+			Assert.IsNotNullOrEmpty(Page, "Redirect needs a page to redirect to");
+			Item pageItem = Sitecore.Context.Database.GetItem(Page);
+			HttpContext.Current.Response.Redirect(LinkManager.GetItemUrl(pageItem));
+		}
+	}
+```
+
+### Step 6
+
+The condition.  (How you get the error code is up to you, I'll discuss a few neat methods for that later on.)
+
+```csharp
+	[UsedImplicitly]
+	public class ErrorCodeIs<T> : StringOperatorCondition<T>
+		where T : RuleContext
+	{
+		public string ErrorCode { get; set; }
+
+		protected override bool Execute(T ruleContext)
+		{
+			return ErrorCode == null //TODO: get the current error code;
+		}
+	}
+```
+
+NOTE: Steps 7 and 8 may be skipped if you are only looking to add rules to the Experience Editor, in which case move on to step 9a.
+
+### Step 7
+
+6. Create a rule context folder.  This is essentially where you aggregate all the groups of rules and actions you wish to utilize.
+![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/errorsrule.png)
+
+### Step 8
+
+7. Assign all of the rule groups you wish to add into this rule context by referencing their tags.  In this example, I'm just adding our Errors tag which is just our one rule and action.
+![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulecontexttags.png)
+
+### Step 9a
+
+8a. If you wish to add the rule to the conditional rendering rules set that you see in the Experience Editor, you need to add the tag from our new set of rules to the conditional rendering rule context folder.
+![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/ruleconditional.png)
+
+### Step 9b
+
+8b. If you wish to make use of this rule outside of the Experience Editor, create a rules field and point it at our rule group.  In any template you choose, create a new field and make it of type "Rules" and in the source give it the path to our "Errors" rule context folder.
+/sitecore/system/Settings/Rules/errors
+![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulesfield.png)
+
+You're done!
+
+That's all there is to it.  Now when you edit your rules, you should see a rules form with our rule and action.
+![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulesbuilder.png)
+
+## Now the fun stuff, thinking outside the box
+
+The majority of Sitecore developers are familiar with using the rules engine in the Experience Editor to personalize content.  However, there are many awesome uses for the rules engine when used outside of the conditional rendering context.
+
+To simplify executing a rules field, I've created an item extension to do just that (which I adapted from this great blog post)
+
+```csharp
+		/// <summary>
+		/// runs the set of rules and checks for any matches, if it finds a match it will run the rule's associated action
+		/// </summary>
+
+		/// <param name="Root">Item which holds the field</param>
+		/// <param name="Field">the rule field name</param>
+		/// <returns></returns>
+		public static void RunRules<T>(this Item Root, string Field, T ruleContext)
+			where T : RuleContext
+		{
+			foreach (Rule<T> rule in RuleFactory.GetRules<T>(new[] { Root }, Field).Rules)
+			{
+				if (rule.Condition != null)
+				{
+					var stack = new RuleStack();
+					rule.Condition.Evaluate(ruleContext, stack);
+
+					if (ruleContext.IsAborted)
+					{
+						continue;
+					}
+					if ((stack.Count != 0) &amp;&amp; ((bool)stack.Pop()))
+					{
+						rule.Execute(ruleContext);
+					}
+				}
+				else
+					rule.Execute(ruleContext);
+			}
+		}
+```
+
+In our ErrorCodeIs condition above, the obvious choice for determining the current error code would be to utilize a user session or perhaps cookies.  However, we can customize what is available in our rule conditions and actions by utilizing different RuleContext objects.  Below I have an example of an ErrorRuleContext which takes in an error code to pass along to the error conditions and actions.
+
+```csharp
+	public class ErrorRuleContext : Sitecore.Rules.RuleContext
+	{
+		public string CurrentErrorCode { get; set; }
+		public ErrorRuleContext(string CurrentErrorCode):base()
+		{
+			this.CurrentErrorCode = CurrentErrorCode;
+		}
+	}
+```
+
+Using this context allows us to access our current error code in our rule condition.
+
+```csharp
+	[UsedImplicitly]
+	public class ErrorCodeIs<T> : StringOperatorCondition<T>
+		where T : ErrorRuleContext
+	{
+		public string ErrorCode { get; set; }
+
+		protected override bool Execute(T ruleContext)
+		{
+			return ErrorCode == ruleContext.CurrentErrorCode;
+		}
+	}
+```
+
+As an example of how you can set this up using these ideas to create something rather cool, here's a custom exception that takes an error code that it will then pass on to our error rules field as an ErrorRuleContext. We then can use rules and actions to detect an error and pass on the user to the appropriate error page.
+
+```csharp
+	public class SiteException : Exception
+	{
+		public SiteException(Item ruleItem, string ruleField, string errorCode)
+		{
+			ProcessErrorCode(ruleItem, ruleField, errorCode);
+		}
+
+		public SiteException(Item ruleItem, string ruleField, string errorCode, string message)
+			: base(message)
+		{
+			ProcessErrorCode(ruleItem, ruleField, errorCode);
+		}
+
+		public SiteException(Item ruleItem, string ruleField, string errorCode, string message, Exception inner)
+			: base(message, inner)
+		{
+			ProcessErrorCode(ruleItem, ruleField, errorCode);
+		}
+		private void ProcessErrorCode(Item ruleItem, string ruleField, string errorCode)
+		{
+			ruleItem.RunRules(ruleField, new ErrorRuleContext(errorCode));
+		}
+	}
+```
+
+Expanding this idea further we could have rule conditions and actions return objects on a custom RuleContext. I imagine using multiple actions to build up a return object on the RuleContext that after executing the rules could then be extracted out of the RuleContext. Really the possibilities are endless!
+
+### Rules Gotchas
+
+While I've worked with the rules engine, I have run into a couple issues that hopefully I can help you avoid.
+
+1. I changed my rules in a rules field and saved it, but the rules aren't updating.  It's still running the old rules set!   Well, Sitecore caches the entire block of rules, and if changes happen to the rules field the cache isn't cleared by default.  It can however be cleared using this:
+
+```csharp
+RuleFactory.InvalidateCache();
+```
+
+NOTE: this doesn't appear to be an issue anymore in Sitecore 8, the cache is cleared when saving a rules field.
+
+2. When using the Item extension method above to run rules you need to pass in a RuleContext.  This is important because the rule factory will not return any conditions unless the rules context used is applicable in all conditions. For example, if you set up your rules field with a GeoIP rule that uses a default RuleContext and our ErrorCodeIs rule that uses an ErrorRuleContext and you try to pass a RuleContext object into the method you wont get any conditions, however it will still get all the actions.  The extension method will at this point run the actions associated with the rule regardless of the conditions.  Its worth noting that if you had passed in an ErrorRuleContext the conditions would all be returned since ErrorRuleContext extends RuleContext.
+
+### Making it better
+
+A few ideas I've implemented using this method:
+
+1.  A page level validation rule that runs on page load.  The conditions used were checking to make sure the user's session was valid and they were allowed to view the page.  If they didn't pass validation it would send them back to the home page.
+
+2.  A global level validation rule that ran on every page load.  The conditions used were used to check an entire branch of the content tree like was done in 1.
+
+3.  I did actually use a rules field to process site errors and distribute the user to the appropriate error page.
+
+Do you see something I missed or have other ideas for expanding the rules engine?  Please post your thoughts and ideas below.
