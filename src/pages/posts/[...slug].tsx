@@ -108,8 +108,6 @@ export async function getStaticProps(
         source: mdxSource,
         nav: dirs,
       },
-      // enable ISR
-      revalidate: 60,
     };
   }
 
