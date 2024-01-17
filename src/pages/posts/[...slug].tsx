@@ -45,7 +45,7 @@ export default function PostPage({
     </div>
   );
 }
-export async function getStaticPaths() {
+export function getStaticPaths() {
   let dirs: string[][] = [];
   const files = fs.readdirSync("public/_posts", { recursive: true });
   files.forEach((file) => {
@@ -58,7 +58,6 @@ export async function getStaticPaths() {
       slug: dir,
     },
   }));
-  console.log(JSON.stringify(paths, null, " "));
   return {
     paths,
     fallback: true,
@@ -71,22 +70,19 @@ export async function getStaticProps(
   }>
 ) {
   const { slug } = ctx.params!;
-  console.log(1);
-  console.log(`public/_posts/${slug.join("/")}.mdx`);
-  if (await fs.existsSync(`public/_posts/${slug.join("/")}.mdx`)) {
-    console.log(2);
-    console.log(`public/_posts/${slug.join("/")}.mdx`);
+
+  if (fs.existsSync(`public/_posts/${slug.join("/")}.mdx`)) {
     // retrieve the MDX blog post file associated
     // with the specified slug parameter
     const postFile = fs.readFileSync(`public/_posts/${slug.join("/")}.mdx`);
-    const dirs: [string[]] = [[]];
+    const dirs: string[][] = [];
 
     const files = fs.readdirSync("public/_posts", {
       recursive: true,
     });
     files.forEach((file) => {
       if (typeof file === "string" && file.endsWith(".mdx")) {
-        dirs.push(file.replace(".mdx", "").split(/[\\/]/g));
+        dirs.push([...["posts"], ...file.replace(".mdx", "").split(/[\\/]/g)]);
       }
     });
 
@@ -116,7 +112,6 @@ export async function getStaticProps(
       revalidate: 60,
     };
   }
-  console.log(3);
-  console.log("nooooooooooooooooooope");
+
   return { props: {} };
 }
