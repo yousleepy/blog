@@ -24,6 +24,7 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+  min-height: 100vh;
 }
 
 h1 {
@@ -42,6 +43,11 @@ h3 {
 p {
   margin-bottom: 1rem;
 }
+pre {
+  margin-left: 1rem;
+  padding: 0.5rem;
+  overflow-x: auto;
+}
 code {
-  margin: 2rem;
+  background-color: black !important;
 }

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { JeffNav } from "@/components/nav";
-import JeffHeader from "@/components/header";
+import { JeffNav } from "@/app/components/nav";
+import JeffHeader from "@/app/components/header";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,9 +19,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div>
-          <JeffHeader />
-          {children}
+        <JeffHeader />
+        <div className="grid-cols-12 grid h-full">
+          <div className="col-span-2 row-start-1 ">
+            <JeffNav />
+          </div>
+          <div className="col-span-9 lg:-mt-16 ">{children}</div>
         </div>
       </body>
     </html>

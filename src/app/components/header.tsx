@@ -13,7 +13,7 @@ export default function JeffHeader() {
             height={256}
           />
         </Link>
-        <div className="w-full align-middle text-center text-2xl font-bold">
+        <div className="w-full ml-40 align-middle text-center text-2xl font-bold">
           Jeff&apos;s Dev stuffs
         </div>
         <div className="text-right"></div>

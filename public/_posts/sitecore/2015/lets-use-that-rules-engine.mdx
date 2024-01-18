@@ -36,19 +36,19 @@ The assumption I am making here is that you are already familiar with setting up
 The action:
 
 ```csharp
-	[UsedImplicitly]
-	public class Redirect<T> : RuleAction<T>
-		where T : RuleContext
-	{
-		public string Page { get; set; }
+[UsedImplicitly]
+public class Redirect<T> : RuleAction<T>
+	where T : RuleContext
+{
+	public string Page { get; set; }
 
-		public override void Apply(T ruleContext)
-		{
-			Assert.IsNotNullOrEmpty(Page, "Redirect needs a page to redirect to");
-			Item pageItem = Sitecore.Context.Database.GetItem(Page);
-			HttpContext.Current.Response.Redirect(LinkManager.GetItemUrl(pageItem));
-		}
+	public override void Apply(T ruleContext)
+	{
+		Assert.IsNotNullOrEmpty(Page, "Redirect needs a page to redirect to");
+		Item pageItem = Sitecore.Context.Database.GetItem(Page);
+		HttpContext.Current.Response.Redirect(LinkManager.GetItemUrl(pageItem));
 	}
+}
 ```
 
 ### Step 6
@@ -56,17 +56,17 @@ The action:
 The condition.  (How you get the error code is up to you, I'll discuss a few neat methods for that later on.)
 
 ```csharp
-	[UsedImplicitly]
-	public class ErrorCodeIs<T> : StringOperatorCondition<T>
-		where T : RuleContext
-	{
-		public string ErrorCode { get; set; }
+[UsedImplicitly]
+public class ErrorCodeIs<T> : StringOperatorCondition<T>
+	where T : RuleContext
+{
+	public string ErrorCode { get; set; }
 
-		protected override bool Execute(T ruleContext)
-		{
-			return ErrorCode == null //TODO: get the current error code;
-		}
+	protected override bool Execute(T ruleContext)
+	{
+		return ErrorCode == null //TODO: get the current error code;
 	}
+}
 ```
 
 NOTE: Steps 7 and 8 may be skipped if you are only looking to add rules to the Experience Editor, in which case move on to step 9a.
@@ -104,93 +104,93 @@ The majority of Sitecore developers are familiar with using the rules engine in 
 To simplify executing a rules field, I've created an item extension to do just that (which I adapted from this great blog post)
 
 ```csharp
-		/// <summary>
-		/// runs the set of rules and checks for any matches, if it finds a match it will run the rule's associated action
-		/// </summary>
+/// <summary>
+/// runs the set of rules and checks for any matches, if it finds a match it will run the rule's associated action
+/// </summary>
 
-		/// <param name="Root">Item which holds the field</param>
-		/// <param name="Field">the rule field name</param>
-		/// <returns></returns>
-		public static void RunRules<T>(this Item Root, string Field, T ruleContext)
-			where T : RuleContext
+/// <param name="Root">Item which holds the field</param>
+/// <param name="Field">the rule field name</param>
+/// <returns></returns>
+public static void RunRules<T>(this Item Root, string Field, T ruleContext)
+	where T : RuleContext
+{
+	foreach (Rule<T> rule in RuleFactory.GetRules<T>(new[] { Root }, Field).Rules)
+	{
+		if (rule.Condition != null)
 		{
-			foreach (Rule<T> rule in RuleFactory.GetRules<T>(new[] { Root }, Field).Rules)
-			{
-				if (rule.Condition != null)
-				{
-					var stack = new RuleStack();
-					rule.Condition.Evaluate(ruleContext, stack);
+			var stack = new RuleStack();
+			rule.Condition.Evaluate(ruleContext, stack);
 
-					if (ruleContext.IsAborted)
-					{
-						continue;
-					}
-					if ((stack.Count != 0) &amp;&amp; ((bool)stack.Pop()))
-					{
-						rule.Execute(ruleContext);
-					}
-				}
-				else
-					rule.Execute(ruleContext);
+			if (ruleContext.IsAborted)
+			{
+				continue;
+			}
+			if ((stack.Count != 0) &amp;&amp; ((bool)stack.Pop()))
+			{
+				rule.Execute(ruleContext);
 			}
 		}
+		else
+			rule.Execute(ruleContext);
+	}
+}
 ```
 
 In our ErrorCodeIs condition above, the obvious choice for determining the current error code would be to utilize a user session or perhaps cookies.  However, we can customize what is available in our rule conditions and actions by utilizing different RuleContext objects.  Below I have an example of an ErrorRuleContext which takes in an error code to pass along to the error conditions and actions.
 
 ```csharp
-	public class ErrorRuleContext : Sitecore.Rules.RuleContext
+public class ErrorRuleContext : Sitecore.Rules.RuleContext
+{
+	public string CurrentErrorCode { get; set; }
+	public ErrorRuleContext(string CurrentErrorCode):base()
 	{
-		public string CurrentErrorCode { get; set; }
-		public ErrorRuleContext(string CurrentErrorCode):base()
-		{
-			this.CurrentErrorCode = CurrentErrorCode;
-		}
+		this.CurrentErrorCode = CurrentErrorCode;
 	}
+}
 ```
 
 Using this context allows us to access our current error code in our rule condition.
 
 ```csharp
-	[UsedImplicitly]
-	public class ErrorCodeIs<T> : StringOperatorCondition<T>
-		where T : ErrorRuleContext
-	{
-		public string ErrorCode { get; set; }
+[UsedImplicitly]
+public class ErrorCodeIs<T> : StringOperatorCondition<T>
+	where T : ErrorRuleContext
+{
+	public string ErrorCode { get; set; }
 
-		protected override bool Execute(T ruleContext)
-		{
-			return ErrorCode == ruleContext.CurrentErrorCode;
-		}
+	protected override bool Execute(T ruleContext)
+	{
+		return ErrorCode == ruleContext.CurrentErrorCode;
 	}
+}
 ```
 
 As an example of how you can set this up using these ideas to create something rather cool, here's a custom exception that takes an error code that it will then pass on to our error rules field as an ErrorRuleContext. We then can use rules and actions to detect an error and pass on the user to the appropriate error page.
 
 ```csharp
-	public class SiteException : Exception
+public class SiteException : Exception
+{
+	public SiteException(Item ruleItem, string ruleField, string errorCode)
 	{
-		public SiteException(Item ruleItem, string ruleField, string errorCode)
-		{
-			ProcessErrorCode(ruleItem, ruleField, errorCode);
-		}
-
-		public SiteException(Item ruleItem, string ruleField, string errorCode, string message)
-			: base(message)
-		{
-			ProcessErrorCode(ruleItem, ruleField, errorCode);
-		}
-
-		public SiteException(Item ruleItem, string ruleField, string errorCode, string message, Exception inner)
-			: base(message, inner)
-		{
-			ProcessErrorCode(ruleItem, ruleField, errorCode);
-		}
-		private void ProcessErrorCode(Item ruleItem, string ruleField, string errorCode)
-		{
-			ruleItem.RunRules(ruleField, new ErrorRuleContext(errorCode));
-		}
+		ProcessErrorCode(ruleItem, ruleField, errorCode);
 	}
+
+	public SiteException(Item ruleItem, string ruleField, string errorCode, string message)
+		: base(message)
+	{
+		ProcessErrorCode(ruleItem, ruleField, errorCode);
+	}
+
+	public SiteException(Item ruleItem, string ruleField, string errorCode, string message, Exception inner)
+		: base(message, inner)
+	{
+		ProcessErrorCode(ruleItem, ruleField, errorCode);
+	}
+	private void ProcessErrorCode(Item ruleItem, string ruleField, string errorCode)
+	{
+		ruleItem.RunRules(ruleField, new ErrorRuleContext(errorCode));
+	}
+}
 ```
 
 Expanding this idea further we could have rule conditions and actions return objects on a custom RuleContext. I imagine using multiple actions to build up a return object on the RuleContext that after executing the rules could then be extracted out of the RuleContext. Really the possibilities are endless!
