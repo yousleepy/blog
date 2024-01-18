@@ -28,7 +28,6 @@ const PokeyPage = ({ params }: PokeyPageParams) => {
           href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.4.0/styles/github-dark.min.css"
         ></link>
       </Head>
-      stuff
       <div className="fixed ml-20">
         <h1> {pokemon?.name}</h1>
         {pokemon.sprites.front_default !== "n/a" ? (

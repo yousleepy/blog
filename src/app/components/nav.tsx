@@ -32,7 +32,6 @@ export const JeffNav = async () => {
     menu["pokeyman"][pokemon.name.charAt(0)][pokemon.name] = {};
   });
   const recurseNav = (cur: NavTree, curPath: string) => {
-    console.log(curPath);
     return (
       <>
         {Object.keys(cur).map((pathSegment) => {
