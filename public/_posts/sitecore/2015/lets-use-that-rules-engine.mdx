@@ -10,24 +10,24 @@ The assumption I am making here is that you are already familiar with setting up
 
 1. Create a tag named "Errors" to identify our new group of rules and actions.
 /sitecore/system/Settings/Rules/Definitions/Tags
-![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulestags.png)
+![image](/_posts/sitecore/2015/lets-use-that-rules-engine/rulestags.png)
 
 ### Step 2
 
 2.  Create a new rule element named "Errors" under the Elements node.
 /sitecore/system/Settings/Rules/Definitions/Elements
-![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/errorelement.png)
+![image](/_posts/sitecore/2015/lets-use-that-rules-engine/errorelement.png)
 
 ### Step 3
 
 3.  Associate the tag we created in Step 1 with the rule element we made in Step 2 by setting the default tag on the rule element.
     /sitecore/system/Settings/Rules/Definitions/Elements/errors/Tags/Default
-    ![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulecontexttags.png)
+    ![image](/_posts/sitecore/2015/lets-use-that-rules-engine/rulecontexttags.png)
 
 ### Step 4
 
 4.Create our rules and actions.  For this demo, I'll be setting up one of each (as seen in the image above).  There's an excellent blog post describing how to set up the text for your rule so that it automatically populates properties in your rule class here: Creating Custom Conditions.  Don't forget to add in the type of your condition or action.
-![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulecondition.png)
+![image](/_posts/sitecore/2015/lets-use-that-rules-engine/rulecondition.png)
 
 ### Step 5
 
@@ -74,28 +74,28 @@ NOTE: Steps 7 and 8 may be skipped if you are only looking to add rules to the
 ### Step 7
 
 6. Create a rule context folder.  This is essentially where you aggregate all the groups of rules and actions you wish to utilize.
-![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/errorsrule.png)
+![image](/_posts/sitecore/2015/lets-use-that-rules-engine/errorsrule.png)
 
 ### Step 8
 
 7. Assign all of the rule groups you wish to add into this rule context by referencing their tags.  In this example, I'm just adding our Errors tag which is just our one rule and action.
-![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulecontexttags.png)
+![image](/_posts/sitecore/2015/lets-use-that-rules-engine/rulecontexttags.png)
 
 ### Step 9a
 
 8a. If you wish to add the rule to the conditional rendering rules set that you see in the Experience Editor, you need to add the tag from our new set of rules to the conditional rendering rule context folder.
-![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/ruleconditional.png)
+![image](/_posts/sitecore/2015/lets-use-that-rules-engine/ruleconditional.png)
 
 ### Step 9b
 
 8b. If you wish to make use of this rule outside of the Experience Editor, create a rules field and point it at our rule group.  In any template you choose, create a new field and make it of type "Rules" and in the source give it the path to our "Errors" rule context folder.
 /sitecore/system/Settings/Rules/errors
-![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulesfield.png)
+![image](/_posts/sitecore/2015/lets-use-that-rules-engine/rulesfield.png)
 
 You're done!
 
 That's all there is to it.  Now when you edit your rules, you should see a rules form with our rule and action.
-![image](/_posts/sitecore/jun2015/lets-use-that-rules-engine/rulesbuilder.png)
+![image](/_posts/sitecore/2015/lets-use-that-rules-engine/rulesbuilder.png)
 
 ## Now the fun stuff, thinking outside the box
 
