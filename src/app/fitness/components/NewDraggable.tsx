@@ -38,6 +38,7 @@ const NewDraggable = () => {
         <div className="modal-box grid-cols-4 grid">
           {tmpData.map((exersize) => (
             <button
+              key={exersize.name}
               className={
                 "btn m-2 p-2 hover:border-lime-500 h-auto " +
                 colorMap.get(exersize.type)
